@@ -181,59 +181,48 @@
         Plotly.newPlot("bubble", bubbleData, layout);
       }
 
-      function renderLineChart(data) {
-        const sorted = [...data].sort((a, b) => b.GDP_per_capita - a.GDP_per_capita).slice(0, 10);
-        const countries = sorted.map(d => d["Country Name"]);
-        const gdpValues = sorted.map(d => d.GDP_per_capita);
+      function renderBarChart(data) {
+    const sorted = [...data].sort((a, b) => b.GDP_per_capita - a.GDP_per_capita).slice(0, 10);
+    const countries = sorted.map(d => d["Country Name"]);
+    const gdpValues = sorted.map(d => d.GDP_per_capita);
 
-        const lineData = [{
-          x: countries,
-          y: gdpValues,
-          type: 'scatter',
-          mode: 'lines+markers+text',
-          line: {
-            color: '#0d6efd',
-            width: 3,
-            shape: 'spline',
-            smoothing: 1.3
-          },
-          marker: {
-            size: 10,
-            color: '#0d6efd',
-            line: {
-              width: 2,
-              color: 'white'
-            }
-          },
-          text: gdpValues.map(v => `$${Math.round(v).toLocaleString()}`),
-          textposition: 'top center',
-          hovertext: countries.map((c, i) => `<b>${c}</b><br>GDP per capita: $${gdpValues[i].toLocaleString()}`),
-          hoverinfo: 'text'
-        }];
+    const barData = [{
+      x: countries,
+      y: gdpValues,
+      type: 'bar',
+      marker: {
+        color: '#0d6efd'
+      },
+      text: gdpValues.map(v => `$${Math.round(v).toLocaleString()}`),
+      textposition: 'auto',
+      hovertext: countries.map((c, i) => `<b>${c}</b><br>GDP per capita: $${gdpValues[i].toLocaleString()}`),
+      hoverinfo: 'text'
+    }];
 
-        const layout = {
-          title: 'Top 10 Countries by GDP per Capita',
-          xaxis: {
-            title: 'Country',
-            tickangle: -45,
-            automargin: true
-          },
-          yaxis: {
-            title: 'GDP per Capita (USD)',
-            tickprefix: '$',
-            gridcolor: '#eee',
-            zeroline: false,
-            range: [0, Math.max(...gdpValues) * 1.2]
-          },
-          margin: { t: 80, l: 80, r: 80, b: 150 },
-          height: 600,
-          plot_bgcolor: 'rgba(240,240,240,0.8)',
-          paper_bgcolor: 'rgba(240,240,240,0.3)',
-          hovermode: 'closest'
-        };
+    const layout = {
+      title: 'Top 10 Countries by GDP per Capita',
+      xaxis: {
+        title: 'Country',
+        tickangle: -45,
+        automargin: true
+      },
+      yaxis: {
+        title: 'GDP per Capita (USD)',
+        tickprefix: '$',
+        gridcolor: '#eee',
+        zeroline: false,
+        range: [0, Math.max(...gdpValues) * 1.2]
+      },
+      margin: { t: 80, l: 80, r: 80, b: 150 },
+      height: 600,
+      plot_bgcolor: 'rgba(240,240,240,0.8)',
+      paper_bgcolor: 'rgba(240,240,240,0.3)',
+      hovermode: 'closest'
+    };
 
-        Plotly.newPlot("line", lineData, layout);
-      }
+    Plotly.newPlot("line", barData, layout);
+  }
+</script>
 
       function showError(error) {
         console.error("Error loading the data: ", error);
