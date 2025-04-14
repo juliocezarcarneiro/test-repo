@@ -19,7 +19,7 @@
       background-color: #0d6efd;
       color: white;
     }
-    #bubble, #line {
+    #bubble, #bar {
       height: 600px;
     }
     .chart-container {
@@ -56,7 +56,7 @@
             <h4>Top 10 Countries by GDP per Capita</h4>
           </div>
           <div class="card-body">
-            <div id="line"></div>
+            <div id="bar"></div>  <!-- Changed from "line" to "bar" -->
           </div>
         </div>
       </div>
@@ -84,19 +84,33 @@
 
       d3.json(dataUrl)
         .then(data => {
+          console.log("Loaded data:", data); // Debugging
           data = cleanData(data);
+          console.log("Cleaned data:", data); // Debugging
           renderCharts(data);
         })
         .catch(error => {
           console.warn("Primary data failed, trying backup...", error);
           d3.json(backupUrl)
             .then(transformBackupData)
-            .then(data => renderCharts(data))
+            .then(data => {
+              console.log("Using backup data:", data); // Debugging
+              renderCharts(data);
+            })
             .catch(backupError => showError(backupError));
         });
 
       function transformBackupData(backupData) {
-        return backupData.map(d => ({
+        // Get unique countries from backup data
+        const uniqueCountries = [...new Set(backupData.map(item => item.country))];
+        
+        // For each country, get the most recent data point
+        const recentData = uniqueCountries.map(country => {
+          const countryData = backupData.filter(d => d.country === country);
+          return countryData[countryData.length - 1]; // Get most recent entry
+        });
+        
+        return recentData.map(d => ({
           "Country Name": d.country,
           "GDP_per_capita": d.gdpPercap,
           "Health_spending_per_capita": d.lifeExp * 100 // approximate
@@ -125,8 +139,13 @@
       }
 
       function renderCharts(data) {
-        renderBubbleChart(data);
-        renderBarChart(data);
+        console.log("Rendering charts with data:", data); // Debugging
+        if (data && data.length > 0) {
+          renderBubbleChart(data);
+          renderBarChart(data);
+        } else {
+          showError(new Error("No valid data available to render charts"));
+        }
       }
 
       function renderBubbleChart(data) {
@@ -182,59 +201,60 @@
       }
 
       function renderBarChart(data) {
-    const sorted = [...data].sort((a, b) => b.GDP_per_capita - a.GDP_per_capita).slice(0, 10);
-    const countries = sorted.map(d => d["Country Name"]);
-    const gdpValues = sorted.map(d => d.GDP_per_capita);
+        // Ensure we have at least 10 countries, but no more than available
+        const count = Math.min(10, data.length);
+        const sorted = [...data].sort((a, b) => b.GDP_per_capita - a.GDP_per_capita).slice(0, count);
+        const countries = sorted.map(d => d["Country Name"]);
+        const gdpValues = sorted.map(d => d.GDP_per_capita);
 
-    const barData = [{
-      x: countries,
-      y: gdpValues,
-      type: 'bar',
-      marker: {
-        color: '#0d6efd'
-      },
-      text: gdpValues.map(v => `$${Math.round(v).toLocaleString()}`),
-      textposition: 'auto',
-      hovertext: countries.map((c, i) => `<b>${c}</b><br>GDP per capita: $${gdpValues[i].toLocaleString()}`),
-      hoverinfo: 'text'
-    }];
+        const barData = [{
+          x: countries,
+          y: gdpValues,
+          type: 'bar',
+          marker: {
+            color: '#0d6efd'
+          },
+          text: gdpValues.map(v => `$${Math.round(v).toLocaleString()}`),
+          textposition: 'auto',
+          hovertext: countries.map((c, i) => `<b>${c}</b><br>GDP per capita: $${gdpValues[i].toLocaleString()}`),
+          hoverinfo: 'text'
+        }];
 
-    const layout = {
-      title: 'Top 10 Countries by GDP per Capita',
-      xaxis: {
-        title: 'Country',
-        tickangle: -45,
-        automargin: true
-      },
-      yaxis: {
-        title: 'GDP per Capita (USD)',
-        tickprefix: '$',
-        gridcolor: '#eee',
-        zeroline: false,
-        range: [0, Math.max(...gdpValues) * 1.2]
-      },
-      margin: { t: 80, l: 80, r: 80, b: 150 },
-      height: 600,
-      plot_bgcolor: 'rgba(240,240,240,0.8)',
-      paper_bgcolor: 'rgba(240,240,240,0.3)',
-      hovermode: 'closest'
-    };
+        const layout = {
+          title: `Top ${count} Countries by GDP per Capita`,
+          xaxis: {
+            title: 'Country',
+            tickangle: -45,
+            automargin: true
+          },
+          yaxis: {
+            title: 'GDP per Capita (USD)',
+            tickprefix: '$',
+            gridcolor: '#eee',
+            zeroline: false,
+            range: [0, Math.max(...gdpValues) * 1.2]
+          },
+          margin: { t: 80, l: 80, r: 80, b: 150 },
+          height: 600,
+          plot_bgcolor: 'rgba(240,240,240,0.8)',
+          paper_bgcolor: 'rgba(240,240,240,0.3)',
+          hovermode: 'closest'
+        };
 
-    Plotly.newPlot("line", barData, layout);
-  }
-</script>
+        Plotly.newPlot("bar", barData, layout);
+      }
 
       function showError(error) {
         console.error("Error loading the data: ", error);
-        d3.select("#bubble").html(`
+        const errorHtml = `
           <div class="alert alert-danger mt-4">
             <h4>Error Loading Data</h4>
-            <p>${error.message}</p>
-            <p>Attempted URLs:</p>
-            <ul><li>${dataUrl}</li><li>${backupUrl}</li></ul>
+            <p>${error.message || 'Unknown error occurred'}</p>
             <p>Please check your internet connection or try again later.</p>
           </div>
-        `);
+        `;
+        document.getElementById("bubble").innerHTML = errorHtml;
+        document.getElementById("bar").innerHTML = errorHtml;
       }
     }
 
