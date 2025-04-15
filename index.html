@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Economic Indicators Dashboard</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
@@ -56,11 +56,7 @@
         showLoading(true);
         const rawData = await loadData();
         economicData = transformData(rawData);
-        
-        if (economicData.length === 0) {
-          throw new Error('No valid data after transformation. Check data structure.');
-        }
-        
+        if (economicData.length === 0) throw new Error('No valid data after transformation.');
         initDashboard();
       } catch (error) {
         console.error('Initialization failed:', error);
@@ -71,69 +67,48 @@
     }
 
     async function loadData() {
-      console.log('Loading data from:', DATA_URL);
       const response = await fetch(DATA_URL);
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      
       const data = await response.json();
-      console.log('Raw data sample:', data.slice(0, 3));
       return data;
     }
 
     function transformData(rawData) {
-      if (!Array.isArray(rawData)) {
-        console.error('Expected array but got:', typeof rawData);
-        return [];
-      }
+      if (!Array.isArray(rawData)) return [];
 
       const transformed = [];
       const skipped = [];
-      
+
       rawData.forEach((item, index) => {
         try {
-          // Extract year (handle multiple formats)
-          let year;
-          if (item.date) {
-            const dateStr = item.date.split('T')[0];
-            year = new Date(dateStr).getFullYear();
-          } else if (item.year) {
-            year = parseInt(item.year);
-          }
-          
-          if (!year || isNaN(year)) {
-            throw new Error(`Invalid year in record ${index}`);
-          }
+          const year = parseInt(item.Year);
+          if (!year || isNaN(year)) throw new Error(`Invalid year in record ${index}`);
 
-          // Extract country name
-          const country = item.country || item.Country_Name || item.name;
-          if (!country) {
-            throw new Error(`Missing country in record ${index}`);
-          }
+          const country = item.Country;
+          if (!country) throw new Error(`Missing country in record ${index}`);
+
+          const gdp = parseNumber(item["GDP per Capita"]);
+          const health = parseNumber(item["Health_Expenditure"]);
+          const popDensity = parseNumber(item["Population density per square kilometer"]);
 
           transformed.push({
             Year: year,
             Country_Name: country,
-            Country_Code: item.country_code || item.Country_Code || '',
-            GDP_per_capita: parseNumber(item.gdp_per_capita || item.GDP_per_capita || item.gdp),
-            Health_spending_per_capita: parseNumber(item.health_expenditure || item.Health_spending_per_capita),
-            Population: parseNumber(item.population || item.Population)
+            Country_Code: item.Code || '',
+            GDP_per_capita: gdp,
+            Health_spending_per_capita: health,
+            Population: popDensity // We're using population density as a proxy here
           });
         } catch (error) {
-          console.warn(`Skipping record ${index}:`, error.message);
-          skipped.push({ index, error: error.message, item });
+          skipped.push({ index, error: error.message });
         }
       });
 
-      console.log(`Transformed ${transformed.length} records, skipped ${skipped.length}`);
-      if (skipped.length > 0) {
-        console.log('Sample skipped records:', skipped.slice(0, 3));
-      }
-      
       return transformed;
     }
 
     function parseNumber(value) {
-      if (value === undefined || value === null) return null;
+      if (value === undefined || value === null || value === "No data") return null;
       const num = typeof value === 'string' ? parseFloat(value.replace(/[^0-9.-]/g, '')) : Number(value);
       return isNaN(num) ? null : num;
     }
@@ -142,32 +117,27 @@
       const years = [...new Set(economicData.map(d => d.Year))]
         .filter(y => !isNaN(y))
         .sort((a, b) => b - a);
-      
-      if (years.length === 0) {
-        throw new Error('No valid years found in data');
-      }
 
       const yearSelect = document.getElementById('yearSelect');
       yearSelect.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
       yearSelect.addEventListener('change', () => updateDashboard(parseInt(yearSelect.value)));
-      
+
       updateDashboard(years[0]);
     }
 
     function updateDashboard(year) {
       const yearData = economicData.filter(d => d.Year === year);
-      
-      updateScatterPlot(yearData);
-      updateBarChart(yearData);
-      updateLineChart(yearData);
+      updateScatterPlot(yearData, year);
+      updateBarChart(yearData, year);
+      updateLineChart(year);
       updateMetricsSummary(yearData);
     }
 
-    function updateScatterPlot(data) {
+    function updateScatterPlot(data, year) {
       const validData = data.filter(d => d.GDP_per_capita && d.Health_spending_per_capita);
-      
+
       if (validData.length === 0) {
-        document.getElementById('scatter-plot').innerHTML = 
+        document.getElementById('scatter-plot').innerHTML =
           '<div class="error-message">No GDP/Health data for selected year</div>';
         return;
       }
@@ -190,13 +160,13 @@
       });
     }
 
-    function updateBarChart(data) {
+    function updateBarChart(data, year) {
       const validData = data.filter(d => d.GDP_per_capita)
         .sort((a, b) => b.GDP_per_capita - a.GDP_per_capita)
         .slice(0, 15);
-      
+
       if (validData.length === 0) {
-        document.getElementById('bar-chart').innerHTML = 
+        document.getElementById('bar-chart').innerHTML =
           '<div class="error-message">No GDP data for selected year</div>';
         return;
       }
@@ -211,15 +181,16 @@
       });
     }
 
-    function updateLineChart(yearData) {
+    function updateLineChart(year) {
+      const yearData = economicData.filter(d => d.Year === year);
       const topCountries = yearData
         .filter(d => d.GDP_per_capita)
         .sort((a, b) => b.GDP_per_capita - a.GDP_per_capita)
         .slice(0, 5)
         .map(d => d.Country_Name);
-      
+
       if (topCountries.length === 0) {
-        document.getElementById('line-chart').innerHTML = 
+        document.getElementById('line-chart').innerHTML =
           '<div class="error-message">No GDP trend data available</div>';
         return;
       }
@@ -228,7 +199,7 @@
         const countryData = economicData
           .filter(d => d.Country_Name === country && d.GDP_per_capita)
           .sort((a, b) => a.Year - b.Year);
-        
+
         return {
           x: countryData.map(d => d.Year),
           y: countryData.map(d => d.GDP_per_capita),
@@ -247,11 +218,11 @@
         'Countries': data.length,
         'Avg GDP': calculateAverage(data, 'GDP_per_capita'),
         'Avg Health': calculateAverage(data, 'Health_spending_per_capita'),
-        'Total Population': calculateSum(data, 'Population')
+        'Avg Pop Density': calculateAverage(data, 'Population')
       };
-      
-      document.getElementById('metrics-summary').innerHTML = 
-        Object.entries(metrics).map(([name, value]) => 
+
+      document.getElementById('metrics-summary').innerHTML =
+        Object.entries(metrics).map(([name, value]) =>
           `<p><strong>${name}:</strong> ${formatValue(name, value)}</p>`
         ).join('');
     }
@@ -261,14 +232,10 @@
       return values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
     }
 
-    function calculateSum(data, field) {
-      return data.map(d => d[field]).filter(v => v !== null).reduce((a, b) => a + b, 0);
-    }
-
     function formatValue(name, value) {
       if (value === null) return 'N/A';
       if (name.includes('GDP') || name.includes('Health')) return `$${Math.round(value).toLocaleString()}`;
-      if (name.includes('Population')) return Math.round(value).toLocaleString();
+      if (name.includes('Pop')) return `${Math.round(value).toLocaleString()} per km²`;
       return value;
     }
 
@@ -279,7 +246,6 @@
     }
 
     function showError(message) {
-      console.error(message);
       document.querySelectorAll('.chart-container').forEach(el => {
         el.innerHTML = `<div class="error-message">${message}</div>`;
       });
