@@ -101,8 +101,8 @@
 <body>
   <div class="container">
     <div class="dashboard-header text-center">
-      <h1>Global Economic Indicators Dashboard</h1>
-      <p class="lead">Exploring the relationship between wealth, health spending, and population density</p>
+      <h1>Global Wealth and Wellbeing:</h1>
+      <p class="lead">A deeper data dive into GDP, health, and income inequality in different countries</p>
     </div>
 
     <!-- Controls -->
@@ -232,7 +232,15 @@
         </div>
       </div>
     </div>
-  </div>
+
+    <!-- Authors Section -->
+    <div class="card mt-5">
+      <div class="card-body text-center">
+        <h5 class="card-title">Authors</h5>
+        <p class="card-text">Anqa Javed, Humaira Enayetullah, Julio Carneiro, Shahab Eshghifard</p>
+        <p class="card-text">Bootcamp UofT and edX</p>
+      </div>
+    </div>
 
   <!-- Font Awesome for icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -389,27 +397,38 @@
     }
   
     function drawBubbleGDPvsDensityChart(data) {
-      Plotly.newPlot("bubbleGDPvsDensity", [{
-        x: data.map(d => d["Population density per square kilometer"]),
-        y: data.map(d => d["GDP per Capita"]),
-        text: data.map(d => `${d.Country}<br>GDP: $${d["GDP per Capita"]}<br>Density: ${d["Population density per square kilometer"]} people/km²`),
-        mode: 'markers',
-        marker: {
-          size: data.map(d => Math.sqrt(d["Health_Expenditure"]) * 0.8), // Adjusted size multiplier
-          color: colors.health,
-          opacity: 0.7,
-          sizemode: 'area',
-          sizeref: 0.1,
-          sizemin: 4
-        }
-      }], {
-        margin: marginSettings.large,
-        xaxis: { title: 'Population Density (people/km²)' },
-        yaxis: { title: 'GDP per Capita (USD)' },
-        hoverlabel: { bgcolor: '#fff' },
-        plot_bgcolor: colors.background
-      }, { responsive: true });
-    }
-  </script>
+  // Ensure the data is filtered and populated correctly
+  data = data.filter(d => d["GDP_per_capita"] !== null && d["Health_spending_per_capita"] !== null);
+  
+  const trace = {
+    x: data.map(d => +d["Population_density"]),  // Assuming you calculate population density
+    y: data.map(d => +d["GDP_per_capita"]),
+    text: data.map(d => d["Country Name"]),
+    mode: 'markers',
+    marker: {
+      size: data.map(d => +d["Health_spending_per_capita"] / 100), // Adjust size based on health spending
+      sizemode: 'area',
+      sizeref: 2.0 * Math.max(...data.map(d => +d["Health_spending_per_capita"])) / (100**2),
+      sizemin: 4,
+      color: data.map(d => +d["Health_spending_per_capita"]),
+      colorscale: 'Viridis',
+      showscale: true,
+      colorbar: { title: "Health Spending (USD)" }
+    },
+    type: 'scatter'
+  };
+
+  const layout = {
+    title: 'GDP per Capita vs Population Density with Health Spending',
+    xaxis: { title: 'Population Density (per km²)', type: 'log' },
+    yaxis: { title: 'GDP per Capita (USD)' },
+    margin: marginSettings.large,
+    hovermode: 'closest'
+  };
+
+  Plotly.newPlot('bubbleGDPvsDensity', [trace], layout, { responsive: true });
+}
+
+</script>
 </body>
 </html>
