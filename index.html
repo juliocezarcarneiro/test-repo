@@ -4,453 +4,548 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-  <title>Economic and Health Indicators Analysis</title>
-  <!-- Bootstrap CSS -->
+  <title>Economic Indicators Analysis</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
   <style>
-    body {
-      background-color: #f8f9fa;
+    body { 
+      background-color: #f8f9fa; 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding-top: 20px;
     }
-    .card {
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    .card { 
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1); 
+      margin-bottom: 20px; 
+      border-radius: 10px; 
+      border: none;
+    }
+    .card-header { 
+      background-color: #0d6efd; 
+      color: white; 
+      border-radius: 10px 10px 0 0 !important; 
+      padding: 12px 20px;
+    }
+    .chart-container { 
+      height: 500px; 
+      margin-bottom: 20px; 
+      background: white; 
+      border-radius: 0 0 10px 10px; 
+      padding: 15px;
+    }
+    .loading { 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      height: 100%;
+      font-size: 1.1rem;
+      color: #666;
+    }
+    .filter-container { 
+      background: white; 
+      padding: 15px; 
+      border-radius: 10px; 
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       margin-bottom: 20px;
     }
-    .card-header {
-      background-color: #0d6efd;
-      color: white;
+    .form-label {
+      font-weight: 500;
+      margin-bottom: 8px;
     }
-    .chart-container {
-      height: 600px;
-      margin-bottom: 30px;
+    .form-select {
+      border-radius: 5px;
+      padding: 8px 12px;
     }
-    .map-container {
-      height: 700px;
+    .header-section {
+      background-color: #f8f9fa !important;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      padding: 20px;
+    }
+    @media (max-width: 768px) {
+      .chart-container {
+        height: 400px;
+      }
     }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="row">
-      <div class="col-md-12 p-5 text-center bg-light">
-        <h1>Global Economic and Health Indicators</h1>
-        <p>Explore relationships between GDP, health spending, and income inequality across countries</p>
+      <div class="col-md-12 text-center header-section">
+        <h2>Economic Indicators Analysis</h2>
+        <p class="lead">Visualizing GDP, Health Spending and Income Inequality</p>
       </div>
     </div>
-    
-    <!-- Scatter Plot Card -->
-    <div class="row mt-4">
+
+    <div class="row">
       <div class="col-md-12">
-        <div class="card">
-          <div class="card-header">
-            <h4>GDP per Capita vs Health Spending per Capita</h4>
-          </div>
-          <div class="card-body">
-            <div id="scatter" class="chart-container"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Bar Chart Card -->
-    <div class="row mt-4">
-      <div class="col-md-12">
-        <div class="card">
-          <div class="card-header">
-            <h4>Income Inequality (GINI Index) by Country</h4>
-          </div>
-          <div class="card-body">
-            <div id="bar" class="chart-container"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Choropleth Map Card -->
-    <div class="row mt-4">
-      <div class="col-md-12">
-        <div class="card">
-          <div class="card-header">
-            <h4>Global Distribution of GDP per Capita</h4>
-          </div>
-          <div class="card-body">
-            <div class="form-check form-check-inline">
-              <input class="form-check-input" type="radio" name="mapDataType" id="gdpData" value="gdp" checked>
-              <label class="form-check-label" for="gdpData">GDP per Capita</label>
+        <div class="filter-container">
+          <div class="row g-3">
+            <div class="col-md-3">
+              <label class="form-label">Year:</label>
+              <select id="yearSelect" class="form-select">
+                <!-- Populated by JavaScript -->
+              </select>
             </div>
-            <div class="form-check form-check-inline">
-              <input class="form-check-input" type="radio" name="mapDataType" id="healthData" value="health">
-              <label class="form-check-label" for="healthData">Health Spending per Capita</label>
+            <div class="col-md-3">
+              <label class="form-label">Map Metric:</label>
+              <select id="metricSelect" class="form-select">
+                <option value="GDP_per_capita">GDP per Capita</option>
+                <option value="Health_spending_per_capita">Health Spending</option>
+                <option value="GINI_index">Income Inequality (GINI)</option>
+              </select>
             </div>
-            <div id="map" class="map-container mt-3"></div>
           </div>
         </div>
       </div>
     </div>
-    
-    <div class="row mt-4">
-      <div class="col-md-12 text-center">
-        <p class="text-muted">Data source: World Bank Indicators</p>
+
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header">
+            <h5>Global Indicators Map</h5>
+          </div>
+          <div id="geo-map" class="chart-container">
+            <div class="loading">
+              <div class="spinner-border text-primary" role="status"></div>
+              <span>Loading map...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header">
+            <h5>GDP vs Health Spending</h5>
+          </div>
+          <div id="bubble" class="chart-container">
+            <div class="loading">
+              <div class="spinner-border text-primary" role="status"></div>
+              <span>Loading chart...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header">
+            <h5>Top Health Spenders</h5>
+          </div>
+          <div id="bar" class="chart-container">
+            <div class="loading">
+              <div class="spinner-border text-primary" role="status"></div>
+              <span>Loading chart...</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- JavaScript Libraries -->
-  <script src="https://d3js.org/d3.v7.min.js"></script>
-  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
-
   <script>
-    let globalData = null;
-    let worldMap = null;
-
+    // Main initialization function
     function init() {
-      loadData();
-      
-      // Add event listeners for map data type radio buttons
-      document.querySelectorAll('input[name="mapDataType"]').forEach(radio => {
-        radio.addEventListener('change', function() {
-          if (globalData && worldMap) {
-            updateMap(globalData, this.value);
-          }
-        });
+      // Show loading state
+      document.querySelectorAll('.loading').forEach(el => {
+        el.innerHTML = `
+          <div class="spinner-border text-primary" role="status"></div>
+          <span>Loading data...</span>
+        `;
       });
-    }
 
-    function loadData() {
-      const dataUrl = "Resources/countries-data.json";
-      const backupUrl = "https://raw.githubusercontent.com/plotly/datasets/master/gapminderDataFiveYear.json";
-
-      d3.json(dataUrl)
+      // Load data from JSON file
+      d3.json("https://juliocezarcarneiro.github.io/test-repo/Resources/countries-data.json")
         .then(data => {
-          console.log("Loaded data:", data);
-          globalData = cleanData(data);
-          renderCharts(globalData);
-        })
-        .catch(error => {
-          console.warn("Primary data failed, trying backup...", error);
-          d3.json(backupUrl)
-            .then(transformBackupData)
-            .then(data => {
-              console.log("Using backup data:", data);
-              globalData = data;
-              renderCharts(globalData);
-            })
-            .catch(backupError => showError(backupError));
-        });
-
-      function transformBackupData(backupData) {
-        // Get unique countries from backup data
-        const uniqueCountries = [...new Set(backupData.map(item => item.country))];
-        
-        // For each country, get the most recent data point
-        const recentData = uniqueCountries.map(country => {
-          const countryData = backupData.filter(d => d.country === country);
-          return countryData[countryData.length - 1]; // Get most recent entry
-        });
-        
-        return recentData.map(d => ({
-          "Country Name": d.country,
-          "Country Code": d.iso_alpha, // Not in backup data, but needed for map
-          "GDP_per_capita": d.gdpPercap,
-          "Health_spending_per_capita": d.lifeExp * 100, // approximate
-          "GINI_index": Math.random() * 30 + 25 // random GINI for demo
-        }));
-      }
-
-      function cleanData(data) {
-        return data
-          .map(d => {
-            let gdp = typeof d.GDP_per_capita === 'string'
-              ? parseFloat(d.GDP_per_capita.replace(/[^0-9.eE+-]/g, ''))
-              : d.GDP_per_capita;
-
-            let health = typeof d.Health_spending_per_capita === 'string'
-              ? parseFloat(d.Health_spending_per_capita.replace(/[^0-9.eE+-]/g, ''))
-              : d.Health_spending_per_capita;
-
-            let gini = typeof d.GINI_index === 'string'
-              ? parseFloat(d.GINI_index.replace(/[^0-9.eE+-]/g, ''))
-              : (d.GINI_index || Math.random() * 30 + 25); // Default if missing
-
-            return {
-              ...d,
-              GDP_per_capita: gdp,
-              Health_spending_per_capita: health,
-              GINI_index: gini
-            };
-          })
-          .filter(d => !isNaN(d.GDP_per_capita) && d.GDP_per_capita > 0 && 
-                       !isNaN(d.Health_spending_per_capita) && d.Health_spending_per_capita > 0 &&
-                       !isNaN(d.GINI_index) && d.GINI_index > 0);
-      }
-    }
-
-    function renderCharts(data) {
-      console.log("Rendering charts with data:", data);
-      if (data && data.length > 0) {
-        renderScatterPlot(data);
-        renderBarChart(data);
-        renderMap(data);
-      } else {
-        showError(new Error("No valid data available to render charts"));
-      }
-    }
-
-    function renderScatterPlot(data) {
-      let scatterData = [{
-        x: data.map(d => d.GDP_per_capita),
-        y: data.map(d => d.Health_spending_per_capita),
-        text: data.map(d =>
-          `<b>${d["Country Name"]}</b><br>` +
-          `GDP: $${d.GDP_per_capita.toLocaleString()}<br>` +
-          `Health Spending: $${d.Health_spending_per_capita.toLocaleString()}<br>` +
-          `GINI Index: ${d.GINI_index.toFixed(1)}`),
-        mode: 'markers',
-        marker: {
-          size: data.map(d => d.GINI_index), // Use GINI index for size
-          sizemode: 'diameter',
-          sizeref: 2.0,
-          color: data.map(d => d.GINI_index), // Use GINI index for color
-          colorscale: 'Viridis',
-          opacity: 0.7,
-          line: { width: 1, color: '#333' },
-          colorbar: {
-            title: 'GINI Index',
-            ticksuffix: ''
+          if (!data || !Array.isArray(data)) {
+            throw new Error("Invalid data format received");
           }
+
+          // Process and visualize the data
+          processDataAndVisualize(data);
+        })
+        .catch(err => {
+          console.error("Error loading data:", err);
+          showError(err.message || "Failed to load data");
+        });
+    }
+
+    // Process data and set up visualizations
+    function processDataAndVisualize(data) {
+      // Get available years and sort descending
+      const years = [...new Set(data.map(d => d.Year))]
+        .filter(y => y !== undefined && y !== null)
+        .sort((a, b) => b - a);
+
+      if (years.length === 0) {
+        throw new Error("No valid years found in data");
+      }
+
+      // Set up year dropdown
+      const yearSelect = document.getElementById("yearSelect");
+      yearSelect.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+
+      // Set up event listeners for filters
+      const updateVisualizations = () => {
+        const selectedYear = +yearSelect.value;
+        const selectedMetric = document.getElementById("metricSelect").value;
+        updateAllCharts(data, selectedYear, selectedMetric);
+      };
+
+      yearSelect.addEventListener("change", updateVisualizations);
+      document.getElementById("metricSelect").addEventListener("change", updateVisualizations);
+
+      // Initial visualization with first available year
+      updateVisualizations();
+    }
+
+    // Update all charts based on selected filters
+    function updateAllCharts(data, year, metric) {
+      try {
+        // Filter data for selected year
+        const yearData = data.filter(d => d.Year === year);
+        
+        // Update each visualization
+        updateMap(yearData, metric);
+        updateBubbleChart(yearData);
+        updateBarChart(yearData);
+      } catch (error) {
+        console.error("Error updating charts:", error);
+        showError(error.message || "Error updating visualizations");
+      }
+    }
+
+    // Update the choropleth map
+    function updateMap(data, metric) {
+      const container = document.getElementById("geo-map");
+      
+      // Filter valid data points
+      const validData = data.filter(d => 
+        d[metric] !== undefined && 
+        d[metric] !== null && 
+        d["Country Code"] && 
+        d["Country Name"]
+      );
+
+      if (validData.length === 0) {
+        container.innerHTML = `
+          <div class="alert alert-warning">
+            No data available for the selected metric and year
+          </div>
+        `;
+        return;
+      }
+
+      // Configuration for different metrics
+      const metricConfig = {
+        GDP_per_capita: {
+          title: "GDP per Capita (USD)",
+          colorscale: [
+            [0, '#E3F2FD'], [0.2, '#90CAF9'], [0.4, '#42A5F5'],
+            [0.6, '#1E88E5'], [0.8, '#1565C0'], [1, '#0D47A1']
+          ],
+          zmin: 500,
+          zmax: 50000,
+          hoverTemplate: "<b>%{location}</b><br>GDP: $%{z:,.0f}"
         },
-        type: 'scatter',
-        hoverinfo: 'text',
-        hoverlabel: {
-          bgcolor: 'white',
-          font: { family: 'Arial', size: 12, color: 'black' }
+        Health_spending_per_capita: {
+          title: "Health Spending per Capita (USD)",
+          colorscale: [
+            [0, '#E8F5E9'], [0.2, '#A5D6A7'], [0.4, '#66BB6A'],
+            [0.6, '#43A047'], [0.8, '#2E7D32'], [1, '#1B5E20']
+          ],
+          zmin: 50,
+          zmax: 5000,
+          hoverTemplate: "<b>%{location}</b><br>Health Spending: $%{z:,.0f}"
+        },
+        GINI_index: {
+          title: "Income Inequality (GINI Index)",
+          colorscale: [
+            [0, '#4CAF50'], [0.3, '#8BC34A'], [0.5, '#FFC107'],
+            [0.7, '#FF9800'], [1, '#F44336']
+          ],
+          zmin: 20,
+          zmax: 70,
+          hoverTemplate: "<b>%{location}</b><br>GINI Index: %{z:.1f}"
         }
-      }];
-
-      const layout = {
-        title: 'GDP per Capita vs Health Spending per Capita<br><sub>Size and color represent GINI index (income inequality)</sub>',
-        xaxis: {
-          title: 'GDP per Capita (USD) - Log Scale',
-          type: 'log',
-          gridcolor: '#eee',
-          tickprefix: '$'
-        },
-        yaxis: {
-          title: 'Health Spending per Capita (USD) - Log Scale',
-          type: 'log',
-          gridcolor: '#eee',
-          tickprefix: '$'
-        },
-        margin: { t: 100, l: 80, r: 80, b: 80 },
-        plot_bgcolor: 'rgba(240,240,240,0.8)',
-        paper_bgcolor: 'rgba(240,240,240,0.3)',
-        height: 550,
-        hovermode: 'closest'
       };
 
-      Plotly.newPlot("scatter", scatterData, layout);
-    }
+      const config = metricConfig[metric];
 
-    function renderBarChart(data) {
-      // Sort by GINI index descending
-      const sorted = [...data].sort((a, b) => b.GINI_index - a.GINI_index);
-      
-      // Take top 30 countries to avoid overcrowding
-      const displayCount = Math.min(30, sorted.length);
-      const displayData = sorted.slice(0, displayCount);
-      
-      const countries = displayData.map(d => d["Country Name"]);
-      const giniValues = displayData.map(d => d.GINI_index);
-      const gdpValues = displayData.map(d => d.GDP_per_capita);
-
-      // Normalize GDP for color scale (log scale for better distribution)
-      const maxGDP = Math.max(...gdpValues);
-      const minGDP = Math.min(...gdpValues);
-      const colorScale = gdpValues.map(gdp => {
-        return (Math.log(gdp) - Math.log(minGDP)) / (Math.log(maxGDP) - Math.log(minGDP));
-      });
-
-      const barData = [{
-        x: countries,
-        y: giniValues,
-        type: 'bar',
-        marker: {
-          color: colorScale,
-          colorscale: 'Viridis',
-          colorbar: {
-            title: 'GDP per Capita',
-            tickvals: [0, 0.5, 1],
-            ticktext: [
-              `$${Math.round(minGDP).toLocaleString()}`,
-              `$${Math.round(Math.exp((Math.log(maxGDP) + Math.log(minGDP)) / 2)).toLocaleString()}`,
-              `$${Math.round(maxGDP).toLocaleString()}`
-            ]
-          }
-        },
-        text: giniValues.map(v => v.toFixed(1)),
-        textposition: 'auto',
-        hovertext: countries.map((c, i) => 
-          `<b>${c}</b><br>` +
-          `GINI Index: ${giniValues[i].toFixed(1)}<br>` +
-          `GDP per capita: $${gdpValues[i].toLocaleString()}`),
-        hoverinfo: 'text'
-      }];
-
-      const layout = {
-        title: `Income Inequality (GINI Index) by Country<br><sub>Color represents GDP per capita</sub>`,
-        xaxis: {
-          title: 'Country',
-          tickangle: -45,
-          automargin: true
-        },
-        yaxis: {
-          title: 'GINI Index (Higher = More Inequality)',
-          range: [0, Math.max(...giniValues) * 1.1],
-          gridcolor: '#eee',
-          zeroline: false
-        },
-        margin: { t: 100, l: 80, r: 80, b: 150 },
-        height: 600,
-        plot_bgcolor: 'rgba(240,240,240,0.8)',
-        paper_bgcolor: 'rgba(240,240,240,0.3)',
-        hovermode: 'closest'
-      };
-
-      Plotly.newPlot("bar", barData, layout);
-    }
-
-    function renderMap(data) {
-      // First load the world map geometry
-      d3.json('https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson')
-        .then(geojson => {
-          // Process the data to match country codes/names with the GeoJSON
-          const countryData = {};
-          data.forEach(d => {
-            // Try to match by country code first, then by name
-            const code = d['Country Code'] || d['country_code'] || d['iso_alpha'] || '';
-            const name = d['Country Name'] || d['country'] || '';
-            countryData[code] = d;
-            countryData[name] = d;
-          });
-
-          // Prepare the features for Plotly
-          const features = geojson.features.map(feature => {
-            const countryCode = feature.properties.ISO_A2;
-            const countryName = feature.properties.NAME;
-            const countryDataPoint = countryData[countryCode] || countryData[countryName] || {};
-            
-            return {
-              type: 'Feature',
-              geometry: feature.geometry,
-              properties: {
-                ...feature.properties,
-                GDP_per_capita: countryDataPoint.GDP_per_capita || null,
-                Health_spending_per_capita: countryDataPoint.Health_spending_per_capita || null,
-                GINI_index: countryDataPoint.GINI_index || null
-              }
-            };
-          });
-
-          // Create the initial map with GDP data
-          updateMap(features, 'gdp');
-        })
-        .catch(error => {
-          console.error("Error loading map data:", error);
-          document.getElementById("map").innerHTML = `
-            <div class="alert alert-warning">
-              <h4>Map Data Not Available</h4>
-              <p>Could not load world map geometry data. Please check your internet connection.</p>
-            </div>
-          `;
-        });
-    }
-
-    function updateMap(features, dataType) {
-      const title = dataType === 'gdp' 
-        ? 'GDP per Capita by Country' 
-        : 'Health Spending per Capita by Country';
-      
-      const colorField = dataType === 'gdp' 
-        ? 'GDP_per_capita' 
-        : 'Health_spending_per_capita';
-      
-      const colorLabel = dataType === 'gdp' 
-        ? 'GDP per Capita (USD)' 
-        : 'Health Spending per Capita (USD)';
-      
-      // Filter out features with no data
-      const validFeatures = features.filter(f => f.properties[colorField] !== null);
-      
-      const data = [{
+      // Create the choropleth trace
+      const trace = {
         type: 'choropleth',
-        locations: validFeatures.map(f => f.properties.ISO_A2),
-        z: validFeatures.map(f => f.properties[colorField]),
-        text: validFeatures.map(f => 
-          `<b>${f.properties.NAME}</b><br>` +
-          `GDP: $${(f.properties.GDP_per_capita || 0).toLocaleString()}<br>` +
-          `Health Spending: $${(f.properties.Health_spending_per_capita || 0).toLocaleString()}<br>` +
-          `GINI Index: ${(f.properties.GINI_index || 'N/A')}`),
-        geojson: features,
-        featureidkey: 'properties.ISO_A2',
-        colorscale: 'Viridis',
+        locationmode: 'ISO-3',
+        locations: validData.map(d => d["Country Code"]),
+        z: validData.map(d => d[metric]),
+        text: validData.map(d => d["Country Name"]),
+        hoverinfo: 'text+z',
+        hovertemplate: config.hoverTemplate,
+        colorscale: config.colorscale,
+        zmin: config.zmin,
+        zmax: config.zmax,
         autocolorscale: false,
+        reversescale: metric === 'GINI_index',
         marker: {
           line: {
-            color: 'rgba(255,255,255,0.2)',
-            width: 0.5
+            color: 'rgb(220,220,220)',
+            width: 0.7
           }
         },
         colorbar: {
-          title: colorLabel,
-          tickprefix: '$'
-        },
-        hoverinfo: 'text'
-      }];
+          title: config.title,
+          thickness: 20,
+          tickprefix: metric === 'GINI_index' ? '' : '$',
+          ticksuffix: metric === 'GINI_index' ? '' : '',
+          tickformat: metric === 'GINI_index' ? '.1f' : ',.0f'
+        }
+      };
 
+      // Map layout configuration
       const layout = {
         title: {
-          text: title,
+          text: `${config.title} (${data[0].Year})`,
           font: {
-            size: 18
+            size: 16,
+            family: 'Arial, sans-serif'
           }
         },
         geo: {
           showframe: false,
           showcoastlines: true,
           projection: {
-            type: 'natural earth'
+            type: 'natural earth',
+            scale: 1.2
           },
-          bgcolor: 'rgba(240,240,240,0.3)'
+          bgcolor: 'rgba(0,0,0,0)',
+          landcolor: 'rgb(245,245,245)',
+          subunitcolor: 'rgb(220,220,220)'
         },
-        margin: { t: 80, l: 0, r: 0, b: 0 },
-        height: 650
+        margin: {
+          t: 50,
+          l: 0,
+          r: 0,
+          b: 0
+        },
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)'
       };
 
-      if (worldMap) {
-        Plotly.react('map', data, layout);
-      } else {
-        worldMap = Plotly.newPlot('map', data, layout);
+      // Plot the map
+      Plotly.newPlot(container, [trace], layout, {
+        responsive: true,
+        displayModeBar: true,
+        displaylogo: false,
+        modeBarButtonsToRemove: ['toImage', 'sendDataToCloud'],
+        scrollZoom: false
+      });
+    }
+
+    // Update the bubble chart (GDP vs Health Spending)
+    function updateBubbleChart(data) {
+      const container = document.getElementById("bubble");
+      
+      // Filter data points with both GDP and Health Spending
+      const validData = data.filter(d => 
+        d.GDP_per_capita && 
+        d.Health_spending_per_capita && 
+        d["Country Name"]
+      );
+
+      if (validData.length === 0) {
+        container.innerHTML = `
+          <div class="alert alert-warning">
+            No GDP and Health Spending data available for the selected year
+          </div>
+        `;
+        return;
       }
+
+      // Adjust visual parameters based on data size
+      const sizeMultiplier = validData.length < 5 ? 3 : 1.5;
+      const showTextLabels = validData.length <= 10;
+
+      // Create bubble chart trace
+      const trace = {
+        x: validData.map(d => d.GDP_per_capita),
+        y: validData.map(d => d.Health_spending_per_capita),
+        text: validData.map(d => `
+          <b>${d["Country Name"]}</b><br>
+          GDP: $${formatNumber(d.GDP_per_capita)}<br>
+          Health Spending: $${formatNumber(d.Health_spending_per_capita)}<br>
+          ${d.GINI_index ? `GINI: ${d.GINI_index.toFixed(1)}` : ''}
+        `),
+        mode: showTextLabels ? 'markers+text' : 'markers',
+        type: 'scatter',
+        hoverinfo: 'text',
+        marker: {
+          size: validData.map(d => Math.sqrt(d.Health_spending_per_capita) * sizeMultiplier),
+          sizemode: 'area',
+          sizeref: 0.05,
+          color: '#4285F4',
+          opacity: 0.8,
+          line: {
+            width: 1,
+            color: 'rgba(0,0,0,0.3)'
+          }
+        },
+        textposition: 'top center',
+        textfont: {
+          size: 10,
+          color: '#333'
+        }
+      };
+
+      // Bubble chart layout
+      const layout = {
+        title: {
+          text: `GDP vs Health Spending (${data[0].Year})`,
+          font: {
+            size: 16
+          }
+        },
+        xaxis: {
+          title: 'GDP per Capita (USD, log scale)',
+          type: 'log',
+          tickformat: '$,.0f',
+          gridcolor: 'rgba(0,0,0,0.1)',
+          range: [Math.log10(500), Math.log10(50000)]
+        },
+        yaxis: {
+          title: 'Health Spending per Capita (USD, log scale)',
+          type: 'log',
+          tickformat: '$,.0f',
+          gridcolor: 'rgba(0,0,0,0.1)',
+          range: [Math.log10(50), Math.log10(5000)]
+        },
+        hovermode: 'closest',
+        margin: {
+          t: 50,
+          l: 60,
+          r: 30,
+          b: 60
+        },
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)'
+      };
+
+      // Plot the bubble chart
+      Plotly.newPlot(container, [trace], layout, {
+        responsive: true,
+        displayModeBar: true
+      });
     }
 
-    function showError(error) {
-      console.error("Error loading the data: ", error);
-      const errorHtml = `
-        <div class="alert alert-danger mt-4">
-          <h4>Error Loading Data</h4>
-          <p>${error.message || 'Unknown error occurred'}</p>
-          <p>Please check your internet connection or try later.</p>
-        </div>
-      `;
-      document.getElementById("scatter").innerHTML = errorHtml;
-      document.getElementById("bar").innerHTML = errorHtml;
-      document.getElementById("map").innerHTML = errorHtml;
+    // Update the bar chart (Top Health Spenders)
+    function updateBarChart(data) {
+      const container = document.getElementById("bar");
+      
+      // Filter and sort health spending data
+      const healthSpenders = data
+        .filter(d => d.Health_spending_per_capita && d["Country Name"])
+        .sort((a, b) => b.Health_spending_per_capita - a.Health_spending_per_capita);
+
+      // Show all if less than 10, otherwise top 10
+      const displayData = healthSpenders.slice(0, Math.max(3, healthSpenders.length));
+
+      if (displayData.length === 0) {
+        container.innerHTML = `
+          <div class="alert alert-warning">
+            No health spending data available for the selected year
+          </div>
+        `;
+        return;
+      }
+
+      // Use distinct colors for small datasets
+      const colors = displayData.length <= 3 ? 
+        ['#4285F4', '#34A853', '#EA4335'] : // Google colors for 3 or fewer
+        '#4285F4'; // Default blue for more
+
+      // Create bar chart trace
+      const trace = {
+        x: displayData.map(d => d["Country Name"]),
+        y: displayData.map(d => d.Health_spending_per_capita),
+        type: 'bar',
+        text: displayData.map(d => `$${formatNumber(d.Health_spending_per_capita)}`),
+        textposition: 'auto',
+        hoverinfo: 'text',
+        hovertext: displayData.map(d => `
+          <b>${d["Country Name"]}</b><br>
+          Health Spending: $${formatNumber(d.Health_spending_per_capita)}<br>
+          GDP: $${formatNumber(d.GDP_per_capita || 'N/A')}<br>
+          ${d.GINI_index ? `GINI: ${d.GINI_index.toFixed(1)}` : ''}
+        `),
+        marker: {
+          color: colors,
+          line: {
+            width: 1,
+            color: 'rgba(0,0,0,0.2)'
+          }
+        }
+      };
+
+      // Bar chart layout
+      const layout = {
+        title: {
+          text: `Top Health Spenders (${data[0].Year})`,
+          font: {
+            size: 16
+          }
+        },
+        xaxis: {
+          title: 'Country',
+          tickangle: -45,
+          tickfont: {
+            size: 10
+          }
+        },
+        yaxis: {
+          title: 'Health Spending per Capita (USD)',
+          tickformat: '$,.0f',
+          gridcolor: 'rgba(0,0,0,0.1)'
+        },
+        margin: {
+          t: 50,
+          l: 60,
+          r: 30,
+          b: Math.max(80, displayData.length * 20) // Dynamic bottom margin
+        },
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)'
+      };
+
+      // Plot the bar chart
+      Plotly.newPlot(container, [trace], layout, {
+        responsive: true,
+        displayModeBar: true
+      });
     }
 
-    window.onload = init;
+    // Helper function to format numbers
+    function formatNumber(num) {
+      if (num === undefined || num === null) return 'N/A';
+      return Math.round(num).toLocaleString();
+    }
+
+    // Show error message
+    function showError(message) {
+      document.querySelectorAll('.chart-container').forEach(el => {
+        el.innerHTML = `
+          <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            ${message}
+          </div>
+        `;
+      });
+    }
+
+    // Initialize when DOM is loaded
+    document.addEventListener("DOMContentLoaded", init);
   </script>
-
-  <!-- Bootstrap JS Bundle with Popper -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
