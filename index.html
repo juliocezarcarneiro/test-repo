@@ -1,551 +1,345 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-  <title>Economic Indicators Analysis</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Economic Indicators Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    body { 
-      background-color: #f8f9fa; 
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      padding-top: 20px;
-    }
-    .card { 
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1); 
-      margin-bottom: 20px; 
-      border-radius: 10px; 
-      border: none;
-    }
-    .card-header { 
-      background-color: #0d6efd; 
-      color: white; 
-      border-radius: 10px 10px 0 0 !important; 
-      padding: 12px 20px;
-    }
-    .chart-container { 
-      height: 500px; 
-      margin-bottom: 20px; 
-      background: white; 
-      border-radius: 0 0 10px 10px; 
+    .chart-container {
+      height: 500px;
+      margin-bottom: 20px;
+      background: white;
+      border-radius: 4px;
       padding: 15px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
-    .loading { 
-      display: flex; 
-      justify-content: center; 
-      align-items: center; 
+    .card-header {
+      background-color: #0d6efd;
+      color: white;
+    }
+    .bg-light {
+      background-color: #f8f9fa!important;
+    }
+    .loading {
+      display: flex;
+      justify-content: center;
+      align-items: center;
       height: 100%;
-      font-size: 1.1rem;
       color: #666;
     }
-    .filter-container { 
-      background: white; 
-      padding: 15px; 
-      border-radius: 10px; 
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      margin-bottom: 20px;
-    }
-    .form-label {
-      font-weight: 500;
-      margin-bottom: 8px;
-    }
-    .form-select {
-      border-radius: 5px;
-      padding: 8px 12px;
-    }
-    .header-section {
-      background-color: #f8f9fa !important;
-      border-radius: 10px;
-      margin-bottom: 20px;
-      padding: 20px;
-    }
-    @media (max-width: 768px) {
-      .chart-container {
-        height: 400px;
-      }
+    .error-message {
+      color: #dc3545;
+      padding: 15px;
     }
   </style>
 </head>
+
 <body>
   <div class="container">
     <div class="row">
-      <div class="col-md-12 text-center header-section">
-        <h2>Economic Indicators Analysis</h2>
-        <p class="lead">Visualizing GDP, Health Spending and Income Inequality</p>
+      <div class="col-md-12 p-5 text-center bg-light">
+        <h1>Economic Indicators Dashboard</h1>
+        <p>Explore GDP, Health Spending, and Population metrics</p>
       </div>
     </div>
-
-    <div class="row">
-      <div class="col-md-12">
-        <div class="filter-container">
-          <div class="row g-3">
-            <div class="col-md-3">
-              <label class="form-label">Year:</label>
-              <select id="yearSelect" class="form-select">
-                <!-- Populated by JavaScript -->
-              </select>
-            </div>
-            <div class="col-md-3">
-              <label class="form-label">Map Metric:</label>
-              <select id="metricSelect" class="form-select">
-                <option value="GDP_per_capita">GDP per Capita</option>
-                <option value="Health_spending_per_capita">Health Spending</option>
-                <option value="GINI_index">Income Inequality (GINI)</option>
-              </select>
-            </div>
-          </div>
+    <div class="row mt-3">
+      <div class="col-md-3">
+        <div class="card card-body bg-light">
+          <h6>Select Year:</h6>
+          <select id="yearSelect" class="form-select"></select>
         </div>
-      </div>
-    </div>
-
-    <div class="row">
-      <div class="col-md-12">
-        <div class="card">
+        <div class="card mt-3">
           <div class="card-header">
-            <h5>Global Indicators Map</h5>
+            <h4 class="card-title">Key Metrics</h4>
           </div>
-          <div id="geo-map" class="chart-container">
-            <div class="loading">
-              <div class="spinner-border text-primary" role="status"></div>
-              <span>Loading map...</span>
-            </div>
+          <div id="metrics-summary" class="card-body">
+            <div class="loading">Loading data...</div>
           </div>
         </div>
       </div>
+      <div class="col-md-9">
+        <div class="chart-container" id="scatter-plot">
+          <div class="loading">Loading scatter plot...</div>
+        </div>
+      </div>
     </div>
-
-    <div class="row">
+    <div class="row mt-3">
       <div class="col-md-6">
-        <div class="card">
-          <div class="card-header">
-            <h5>GDP vs Health Spending</h5>
-          </div>
-          <div id="bubble" class="chart-container">
-            <div class="loading">
-              <div class="spinner-border text-primary" role="status"></div>
-              <span>Loading chart...</span>
-            </div>
-          </div>
+        <div class="chart-container" id="bar-chart">
+          <div class="loading">Loading bar chart...</div>
         </div>
       </div>
       <div class="col-md-6">
-        <div class="card">
-          <div class="card-header">
-            <h5>Top Health Spenders</h5>
-          </div>
-          <div id="bar" class="chart-container">
-            <div class="loading">
-              <div class="spinner-border text-primary" role="status"></div>
-              <span>Loading chart...</span>
-            </div>
-          </div>
+        <div class="chart-container" id="line-chart">
+          <div class="loading">Loading line chart...</div>
         </div>
       </div>
     </div>
   </div>
 
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
   <script>
-    // Main initialization function
-    function init() {
-      // Show loading state
-      document.querySelectorAll('.loading').forEach(el => {
-        el.innerHTML = `
-          <div class="spinner-border text-primary" role="status"></div>
-          <span>Loading data...</span>
-        `;
-      });
+    // Global variables
+    let economicData = [];
+    const DATA_URL = "https://juliocezarcarneiro.github.io/test-repo/Resources/countries-data.json";
+    
+    // Main initialization
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('Dashboard initializing...');
+      loadData();
+    });
 
-      // Load data from JSON file
-      d3.json("https://juliocezarcarneiro.github.io/test-repo/Resources/countries-data.json")
-        .then(data => {
-          if (!data || !Array.isArray(data)) {
-            throw new Error("Invalid data format received");
-          }
-
-          // Process and visualize the data
-          processDataAndVisualize(data);
-        })
-        .catch(err => {
-          console.error("Error loading data:", err);
-          showError(err.message || "Failed to load data");
-        });
-    }
-
-    // Process data and set up visualizations
-    function processDataAndVisualize(data) {
-      // Get available years and sort descending
-      const years = [...new Set(data.map(d => d.Year))]
-        .filter(y => y !== undefined && y !== null)
-        .sort((a, b) => b - a);
-
-      if (years.length === 0) {
-        throw new Error("No valid years found in data");
-      }
-
-      // Set up year dropdown
-      const yearSelect = document.getElementById("yearSelect");
-      yearSelect.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
-
-      // Set up event listeners for filters
-      const updateVisualizations = () => {
-        const selectedYear = +yearSelect.value;
-        const selectedMetric = document.getElementById("metricSelect").value;
-        updateAllCharts(data, selectedYear, selectedMetric);
-      };
-
-      yearSelect.addEventListener("change", updateVisualizations);
-      document.getElementById("metricSelect").addEventListener("change", updateVisualizations);
-
-      // Initial visualization with first available year
-      updateVisualizations();
-    }
-
-    // Update all charts based on selected filters
-    function updateAllCharts(data, year, metric) {
+    // Load and process data
+    async function loadData() {
       try {
-        // Filter data for selected year
-        const yearData = data.filter(d => d.Year === year);
+        showLoading(true);
+        console.log('Fetching data from:', DATA_URL);
         
-        // Update each visualization
-        updateMap(yearData, metric);
-        updateBubbleChart(yearData);
-        updateBarChart(yearData);
+        const response = await fetch(DATA_URL);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const rawData = await response.json();
+        console.log('Data loaded successfully');
+        
+        economicData = transformData(rawData);
+        if (economicData.length === 0) {
+          throw new Error('No valid data after transformation');
+        }
+        
+        initDashboard();
       } catch (error) {
-        console.error("Error updating charts:", error);
-        showError(error.message || "Error updating visualizations");
+        console.error('Data loading failed:', error);
+        showError(`Failed to load data: ${error.message}`);
+      } finally {
+        showLoading(false);
       }
     }
 
-    // Update the choropleth map
-    function updateMap(data, metric) {
-      const container = document.getElementById("geo-map");
+    // Transform raw data to consistent format
+    function transformData(rawData) {
+      if (!Array.isArray(rawData)) {
+        console.warn('Expected array but got:', typeof rawData);
+        return [];
+      }
       
-      // Filter valid data points
-      const validData = data.filter(d => 
-        d[metric] !== undefined && 
-        d[metric] !== null && 
-        d["Country Code"] && 
-        d["Country Name"]
-      );
+      return rawData
+        .map(item => {
+          // Extract year (handle different date formats)
+          let year;
+          if (item.date) {
+            const dateStr = item.date.split('T')[0]; // Handle ISO dates
+            year = new Date(dateStr).getFullYear();
+          } else if (item.year) {
+            year = parseInt(item.year);
+          }
+          
+          if (!year || isNaN(year)) {
+            console.warn('Invalid year for item:', item);
+            return null;
+          }
+          
+          return {
+            Year: year,
+            Country_Name: item.country || item.Country_Name || item.name || 'Unknown',
+            Country_Code: item.country_code || item.Country_Code || '',
+            GDP_per_capita: parseFloat(item.gdp_per_capita || item.GDP_per_capita || item.gdp) || null,
+            Health_spending_per_capita: parseFloat(item.health_expenditure || item.Health_spending_per_capita) || null,
+            Population: parseInt(item.population || item.Population) || null
+          };
+        })
+        .filter(item => item !== null && item.Country_Name !== 'Unknown');
+    }
 
-      if (validData.length === 0) {
-        container.innerHTML = `
-          <div class="alert alert-warning">
-            No data available for the selected metric and year
-          </div>
-        `;
+    // Initialize dashboard with data
+    function initDashboard() {
+      console.log('Initializing dashboard with', economicData.length, 'records');
+      
+      // Populate year dropdown
+      const years = [...new Set(economicData.map(d => d.Year))]
+        .filter(y => !isNaN(y))
+        .sort((a, b) => b - a);
+      
+      const yearSelect = document.getElementById('yearSelect');
+      yearSelect.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+      
+      if (years.length > 0) {
+        updateDashboard(years[0]);
+      } else {
+        showError('No valid years found in data');
+      }
+      
+      // Add event listener for year changes
+      yearSelect.addEventListener('change', function() {
+        updateDashboard(parseInt(this.value));
+      });
+    }
+
+    // Update all visualizations
+    function updateDashboard(selectedYear) {
+      console.log('Updating dashboard for year:', selectedYear);
+      
+      const yearData = economicData.filter(d => d.Year === selectedYear);
+      if (yearData.length === 0) {
+        showError(`No data available for year ${selectedYear}`);
         return;
       }
-
-      // Configuration for different metrics
-      const metricConfig = {
-        GDP_per_capita: {
-          title: "GDP per Capita (USD)",
-          colorscale: [
-            [0, '#E3F2FD'], [0.2, '#90CAF9'], [0.4, '#42A5F5'],
-            [0.6, '#1E88E5'], [0.8, '#1565C0'], [1, '#0D47A1']
-          ],
-          zmin: 500,
-          zmax: 50000,
-          hoverTemplate: "<b>%{location}</b><br>GDP: $%{z:,.0f}"
-        },
-        Health_spending_per_capita: {
-          title: "Health Spending per Capita (USD)",
-          colorscale: [
-            [0, '#E8F5E9'], [0.2, '#A5D6A7'], [0.4, '#66BB6A'],
-            [0.6, '#43A047'], [0.8, '#2E7D32'], [1, '#1B5E20']
-          ],
-          zmin: 50,
-          zmax: 5000,
-          hoverTemplate: "<b>%{location}</b><br>Health Spending: $%{z:,.0f}"
-        },
-        GINI_index: {
-          title: "Income Inequality (GINI Index)",
-          colorscale: [
-            [0, '#4CAF50'], [0.3, '#8BC34A'], [0.5, '#FFC107'],
-            [0.7, '#FF9800'], [1, '#F44336']
-          ],
-          zmin: 20,
-          zmax: 70,
-          hoverTemplate: "<b>%{location}</b><br>GINI Index: %{z:.1f}"
-        }
-      };
-
-      const config = metricConfig[metric];
-
-      // Create the choropleth trace
-      const trace = {
-        type: 'choropleth',
-        locationmode: 'ISO-3',
-        locations: validData.map(d => d["Country Code"]),
-        z: validData.map(d => d[metric]),
-        text: validData.map(d => d["Country Name"]),
-        hoverinfo: 'text+z',
-        hovertemplate: config.hoverTemplate,
-        colorscale: config.colorscale,
-        zmin: config.zmin,
-        zmax: config.zmax,
-        autocolorscale: false,
-        reversescale: metric === 'GINI_index',
-        marker: {
-          line: {
-            color: 'rgb(220,220,220)',
-            width: 0.7
-          }
-        },
-        colorbar: {
-          title: config.title,
-          thickness: 20,
-          tickprefix: metric === 'GINI_index' ? '' : '$',
-          ticksuffix: metric === 'GINI_index' ? '' : '',
-          tickformat: metric === 'GINI_index' ? '.1f' : ',.0f'
-        }
-      };
-
-      // Map layout configuration
-      const layout = {
-        title: {
-          text: `${config.title} (${data[0].Year})`,
-          font: {
-            size: 16,
-            family: 'Arial, sans-serif'
-          }
-        },
-        geo: {
-          showframe: false,
-          showcoastlines: true,
-          projection: {
-            type: 'natural earth',
-            scale: 1.2
-          },
-          bgcolor: 'rgba(0,0,0,0)',
-          landcolor: 'rgb(245,245,245)',
-          subunitcolor: 'rgb(220,220,220)'
-        },
-        margin: {
-          t: 50,
-          l: 0,
-          r: 0,
-          b: 0
-        },
-        paper_bgcolor: 'rgba(0,0,0,0)',
-        plot_bgcolor: 'rgba(0,0,0,0)'
-      };
-
-      // Plot the map
-      Plotly.newPlot(container, [trace], layout, {
-        responsive: true,
-        displayModeBar: true,
-        displaylogo: false,
-        modeBarButtonsToRemove: ['toImage', 'sendDataToCloud'],
-        scrollZoom: false
-      });
+      
+      updateScatterPlot(yearData);
+      updateBarChart(yearData);
+      updateLineChart(yearData);
+      updateMetricsSummary(yearData);
     }
 
-    // Update the bubble chart (GDP vs Health Spending)
-    function updateBubbleChart(data) {
-      const container = document.getElementById("bubble");
-      
-      // Filter data points with both GDP and Health Spending
-      const validData = data.filter(d => 
+    // 1. Scatter Plot: GDP vs Health Spending
+    function updateScatterPlot(data) {
+      const container = document.getElementById('scatter-plot');
+      const filteredData = data.filter(d => 
         d.GDP_per_capita && 
         d.Health_spending_per_capita && 
-        d["Country Name"]
+        d.Country_Name
       );
-
-      if (validData.length === 0) {
-        container.innerHTML = `
-          <div class="alert alert-warning">
-            No GDP and Health Spending data available for the selected year
-          </div>
-        `;
-        return;
-      }
-
-      // Adjust visual parameters based on data size
-      const sizeMultiplier = validData.length < 5 ? 3 : 1.5;
-      const showTextLabels = validData.length <= 10;
-
-      // Create bubble chart trace
-      const trace = {
-        x: validData.map(d => d.GDP_per_capita),
-        y: validData.map(d => d.Health_spending_per_capita),
-        text: validData.map(d => `
-          <b>${d["Country Name"]}</b><br>
-          GDP: $${formatNumber(d.GDP_per_capita)}<br>
-          Health Spending: $${formatNumber(d.Health_spending_per_capita)}<br>
-          ${d.GINI_index ? `GINI: ${d.GINI_index.toFixed(1)}` : ''}
-        `),
-        mode: showTextLabels ? 'markers+text' : 'markers',
-        type: 'scatter',
-        hoverinfo: 'text',
-        marker: {
-          size: validData.map(d => Math.sqrt(d.Health_spending_per_capita) * sizeMultiplier),
-          sizemode: 'area',
-          sizeref: 0.05,
-          color: '#4285F4',
-          opacity: 0.8,
-          line: {
-            width: 1,
-            color: 'rgba(0,0,0,0.3)'
-          }
-        },
-        textposition: 'top center',
-        textfont: {
-          size: 10,
-          color: '#333'
-        }
-      };
-
-      // Bubble chart layout
-      const layout = {
-        title: {
-          text: `GDP vs Health Spending (${data[0].Year})`,
-          font: {
-            size: 16
-          }
-        },
-        xaxis: {
-          title: 'GDP per Capita (USD, log scale)',
-          type: 'log',
-          tickformat: '$,.0f',
-          gridcolor: 'rgba(0,0,0,0.1)',
-          range: [Math.log10(500), Math.log10(50000)]
-        },
-        yaxis: {
-          title: 'Health Spending per Capita (USD, log scale)',
-          type: 'log',
-          tickformat: '$,.0f',
-          gridcolor: 'rgba(0,0,0,0.1)',
-          range: [Math.log10(50), Math.log10(5000)]
-        },
-        hovermode: 'closest',
-        margin: {
-          t: 50,
-          l: 60,
-          r: 30,
-          b: 60
-        },
-        paper_bgcolor: 'rgba(0,0,0,0)',
-        plot_bgcolor: 'rgba(0,0,0,0)'
-      };
-
-      // Plot the bubble chart
-      Plotly.newPlot(container, [trace], layout, {
-        responsive: true,
-        displayModeBar: true
-      });
-    }
-
-    // Update the bar chart (Top Health Spenders)
-    function updateBarChart(data) {
-      const container = document.getElementById("bar");
       
-      // Filter and sort health spending data
-      const healthSpenders = data
-        .filter(d => d.Health_spending_per_capita && d["Country Name"])
-        .sort((a, b) => b.Health_spending_per_capita - a.Health_spending_per_capita);
-
-      // Show all if less than 10, otherwise top 10
-      const displayData = healthSpenders.slice(0, Math.max(3, healthSpenders.length));
-
-      if (displayData.length === 0) {
-        container.innerHTML = `
-          <div class="alert alert-warning">
-            No health spending data available for the selected year
-          </div>
-        `;
+      if (filteredData.length === 0) {
+        container.innerHTML = '<div class="error-message">No GDP and Health Spending data available</div>';
         return;
       }
 
-      // Use distinct colors for small datasets
-      const colors = displayData.length <= 3 ? 
-        ['#4285F4', '#34A853', '#EA4335'] : // Google colors for 3 or fewer
-        '#4285F4'; // Default blue for more
-
-      // Create bar chart trace
       const trace = {
-        x: displayData.map(d => d["Country Name"]),
-        y: displayData.map(d => d.Health_spending_per_capita),
-        type: 'bar',
-        text: displayData.map(d => `$${formatNumber(d.Health_spending_per_capita)}`),
-        textposition: 'auto',
-        hoverinfo: 'text',
-        hovertext: displayData.map(d => `
-          <b>${d["Country Name"]}</b><br>
-          Health Spending: $${formatNumber(d.Health_spending_per_capita)}<br>
-          GDP: $${formatNumber(d.GDP_per_capita || 'N/A')}<br>
-          ${d.GINI_index ? `GINI: ${d.GINI_index.toFixed(1)}` : ''}
-        `),
+        x: filteredData.map(d => d.GDP_per_capita),
+        y: filteredData.map(d => d.Health_spending_per_capita),
+        text: filteredData.map(d => d.Country_Name),
+        mode: 'markers',
+        type: 'scatter',
         marker: {
-          color: colors,
-          line: {
-            width: 1,
-            color: 'rgba(0,0,0,0.2)'
+          size: 10,
+          color: filteredData.map(d => d.Population ? Math.log10(d.Population) : 1),
+          colorscale: 'Viridis',
+          opacity: 0.8,
+          colorbar: {
+            title: 'Log10(Population)'
           }
-        }
+        },
+        hovertemplate: '<b>%{text}</b><br>GDP: $%{x:,.0f}<br>Health: $%{y:,.0f}<extra></extra>'
       };
-
-      // Bar chart layout
-      const layout = {
-        title: {
-          text: `Top Health Spenders (${data[0].Year})`,
-          font: {
-            size: 16
-          }
-        },
-        xaxis: {
-          title: 'Country',
-          tickangle: -45,
-          tickfont: {
-            size: 10
-          }
-        },
-        yaxis: {
-          title: 'Health Spending per Capita (USD)',
-          tickformat: '$,.0f',
-          gridcolor: 'rgba(0,0,0,0.1)'
-        },
-        margin: {
-          t: 50,
-          l: 60,
-          r: 30,
-          b: Math.max(80, displayData.length * 20) // Dynamic bottom margin
-        },
-        paper_bgcolor: 'rgba(0,0,0,0)',
-        plot_bgcolor: 'rgba(0,0,0,0)'
-      };
-
-      // Plot the bar chart
-      Plotly.newPlot(container, [trace], layout, {
-        responsive: true,
-        displayModeBar: true
+      
+      Plotly.newPlot(container, [trace], {
+        title: `GDP vs Health Spending (${data[0].Year})`,
+        xaxis: { title: 'GDP per Capita (USD)', type: 'log' },
+        yaxis: { title: 'Health Spending per Capita (USD)', type: 'log' },
+        margin: { t: 50, l: 60, r: 30, b: 60 }
       });
     }
 
-    // Helper function to format numbers
-    function formatNumber(num) {
-      if (num === undefined || num === null) return 'N/A';
-      return Math.round(num).toLocaleString();
+    // 2. Bar Chart: Top Countries by GDP
+    function updateBarChart(data) {
+      const container = document.getElementById('bar-chart');
+      const filteredData = data
+        .filter(d => d.GDP_per_capita && d.Country_Name)
+        .sort((a, b) => b.GDP_per_capita - a.GDP_per_capita)
+        .slice(0, 15);
+      
+      if (filteredData.length === 0) {
+        container.innerHTML = '<div class="error-message">No GDP data available</div>';
+        return;
+      }
+
+      Plotly.newPlot(container, [{
+        x: filteredData.map(d => d.Country_Name),
+        y: filteredData.map(d => d.GDP_per_capita),
+        type: 'bar',
+        marker: {
+          color: filteredData.map(d => {
+            if (d.GDP_per_capita > 30000) return '#2ca02c';
+            if (d.GDP_per_capita > 10000) return '#ff7f0e';
+            return '#d62728';
+          })
+        },
+        hovertemplate: '<b>%{x}</b><br>GDP: $%{y:,.0f}<extra></extra>'
+      }], {
+        title: `Top 15 Countries by GDP (${data[0].Year})`,
+        xaxis: { title: 'Country', tickangle: -45 },
+        yaxis: { title: 'GDP per Capita (USD)' },
+        margin: { t: 50, l: 60, r: 30, b: 100 }
+      });
     }
 
-    // Show error message
+    // 3. Line Chart: GDP Trends for Top Countries
+    function updateLineChart(yearData) {
+      const container = document.getElementById('line-chart');
+      const topCountries = yearData
+        .filter(d => d.GDP_per_capita && d.Country_Name)
+        .sort((a, b) => b.GDP_per_capita - a.GDP_per_capita)
+        .slice(0, 5)
+        .map(d => d.Country_Name);
+      
+      if (topCountries.length === 0) {
+        container.innerHTML = '<div class="error-message">No GDP data for trends</div>';
+        return;
+      }
+
+      const traces = topCountries.map(country => {
+        const countryData = economicData
+          .filter(d => d.Country_Name === country && d.GDP_per_capita)
+          .sort((a, b) => a.Year - b.Year);
+        
+        return {
+          x: countryData.map(d => d.Year),
+          y: countryData.map(d => d.GDP_per_capita),
+          name: country,
+          type: 'line',
+          hovertemplate: '<b>%{text}</b><br>Year: %{x}<br>GDP: $%{y:,.0f}<extra></extra>'
+        };
+      });
+
+      Plotly.newPlot(container, traces, {
+        title: `GDP Trends for Top Countries (${yearData[0].Year})`,
+        xaxis: { title: 'Year' },
+        yaxis: { title: 'GDP per Capita (USD)' },
+        margin: { t: 50, l: 60, r: 30, b: 60 },
+        legend: { orientation: 'h', y: -0.2 }
+      });
+    }
+
+    // Update metrics summary panel
+    function updateMetricsSummary(data) {
+      const summaryDiv = document.getElementById('metrics-summary');
+      
+      const withGDP = data.filter(d => d.GDP_per_capita);
+      const withHealth = data.filter(d => d.Health_spending_per_capita);
+      const withPop = data.filter(d => d.Population);
+      
+      const avgGDP = withGDP.reduce((sum, d) => sum + d.GDP_per_capita, 0) / withGDP.length;
+      const avgHealth = withHealth.reduce((sum, d) => sum + d.Health_spending_per_capita, 0) / withHealth.length;
+      const totalPop = withPop.reduce((sum, d) => sum + d.Population, 0);
+      
+      summaryDiv.innerHTML = `
+        <p><strong>Countries:</strong> ${data.length}</p>
+        <p><strong>Avg GDP:</strong> $${avgGDP.toLocaleString('en-US', {maximumFractionDigits: 0})}</p>
+        <p><strong>Avg Health Spending:</strong> $${avgHealth.toLocaleString('en-US', {maximumFractionDigits: 0})}</p>
+        <p><strong>Total Population:</strong> ${totalPop.toLocaleString('en-US')}</p>
+      `;
+    }
+
+    // UI Helpers
+    function showLoading(show) {
+      document.querySelectorAll('.loading').forEach(el => {
+        el.style.display = show ? 'flex' : 'none';
+      });
+    }
+
     function showError(message) {
-      document.querySelectorAll('.chart-container').forEach(el => {
-        el.innerHTML = `
-          <div class="alert alert-danger">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i>
-            ${message}
-          </div>
-        `;
+      console.error('Dashboard error:', message);
+      document.querySelectorAll('.chart-container').forEach(container => {
+        if (container.innerHTML.includes('Loading')) {
+          container.innerHTML = `<div class="error-message">${message}</div>`;
+        }
       });
     }
-
-    // Initialize when DOM is loaded
-    document.addEventListener("DOMContentLoaded", init);
   </script>
 </body>
 </html>
