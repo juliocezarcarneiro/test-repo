@@ -316,7 +316,7 @@
   
     function drawMiniCharts(data) {
       // GDP Chart
-      const topGDP = data.sort((a, b) => b["GDP per Capita"] - a["GDP per Capita"]).slice(0, 3);
+      const topGDP = data.sort((a, b) => b["GDP per Capita"] - a["GDP per Capita"]).slice(0, 5);
       Plotly.newPlot("topGDPChart", [{
         x: topGDP.map(d => d.Country),
         y: topGDP.map(d => d["GDP per Capita"]),
@@ -329,10 +329,10 @@
       }, { responsive: true });
 
       // Density Chart
-      const topDensity = data.sort((a, b) => b["Population density per square kilometer"] - a["Population density per square kilometer"]).slice(0, 3);
+      const topDensity = data.sort((a, b) => b["Population Density"] - a["Population Density"]).slice(0, 5);
       Plotly.newPlot("topDensityChart", [{
         x: topDensity.map(d => d.Country),
-        y: topDensity.map(d => d["Population density per square kilometer"]),
+        y: topDensity.map(d => d["Population Density"]),
         type: 'bar',
         marker: { color: colors.density }
       }], {
@@ -342,10 +342,10 @@
       }, { responsive: true });
 
       // Health Chart
-      const topHealth = data.sort((a, b) => b["Health_Expenditure"] - a["Health_Expenditure"]).slice(0, 3);
+      const topHealth = data.sort((a, b) => b["Health Expenditure"] - a["Health Expenditure"]).slice(0, 5);
       Plotly.newPlot("topHealthChart", [{
         x: topHealth.map(d => d.Country),
-        y: topHealth.map(d => d["Health_Expenditure"]),
+        y: topHealth.map(d => d["Health Expenditure"]),
         type: 'bar',
         marker: { color: colors.health }
       }], {
@@ -398,30 +398,30 @@
   
     function drawBubbleGDPvsDensityChart(data) {
   // Ensure the data is filtered and populated correctly
-  data = data.filter(d => d["GDP_per_capita"] !== null && d["Health_spending_per_capita"] !== null);
+  data = data.filter(d => d["GDP per Capita"] !== null && d["Health Expenditure"] !== null);
   
   const trace = {
-    x: data.map(d => +d["Population_density"]),  // Assuming you calculate population density
-    y: data.map(d => +d["GDP_per_capita"]),
-    text: data.map(d => d["Country Name"]),
+    x: data.map(d => +d["GDP per Capita"]),
+    y: data.map(d => +d["Health Expenditure"]),
+    text: data.map(d => d["Country"]),
     mode: 'markers',
     marker: {
-      size: data.map(d => +d["Health_spending_per_capita"] / 100), // Adjust size based on health spending
+      size: data.map(d => +d["Population"] / 100),
       sizemode: 'area',
-      sizeref: 2.0 * Math.max(...data.map(d => +d["Health_spending_per_capita"])) / (100**2),
+      sizeref: 2.0 * Math.max(...data.map(d => +d["Population"])) / (100**2),
       sizemin: 4,
-      color: data.map(d => +d["Health_spending_per_capita"]),
+      color: data.map(d => +d["Population"]),
       colorscale: 'Viridis',
       showscale: true,
-      colorbar: { title: "Health Spending (USD)" }
+      colorbar: { title: "Population" }
     },
     type: 'scatter'
   };
 
   const layout = {
-    title: 'GDP per Capita vs Population Density with Health Spending',
-    xaxis: { title: 'Population Density (per km²)', type: 'log' },
-    yaxis: { title: 'GDP per Capita (USD)' },
+    title: 'GDP per Capita vs Health Spending',
+    xaxis: { title: 'GDP per Capita (USD)', type: 'log' },
+    yaxis: { title: 'Health Spending per person  ' },
     margin: marginSettings.large,
     hovermode: 'closest'
   };
